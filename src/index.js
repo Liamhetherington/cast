@@ -1,4 +1,4 @@
-import React, {useState} from 'react'
+import React, {useState, useEffect} from 'react'
 import ReactDOM from 'react-dom'
 import axios from 'axios'
 
@@ -8,20 +8,17 @@ import Episode from './components/Episode'
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useState('')
+  const [podcasts, setPodcasts] = useState([])
+  const [episodes, setEpisodes] = useState([])
+  const [selectedPodcast, setSelectedPodcast] = useState(null)
 
-  const podcasts = [
-    {id:0, name:'podcast 1', image:'/images/person_1.jpg', categories:['sports', 'entertainment']},
-    {id:1, name:'podcast 2', image:'/images/person_2.jpg', categories:['news', 'politics']},
-    {id:2, name:'podcast 3', image:'/images/person_3.jpg', categories:['business', 'economy']},
-  ]
-
-  const episodes = [
-    { id: 0, title:'Track 1', artist:'artist 1', image:'images/img_1.jpg', trackUrl:'http://hwcdn.libsyn.com/p/e/2/d/e2d49676d65218ec/p1541a.mp3?c_id=84308228&cs_id=84308228&expiration=1601254668&hwt=ccab3206052417d0e901722ab00c9c88'},
-    { id: 1, title:'Track 2', artist:'artist 1', image:'images/img_2.jpg', trackUrl:'http://hwcdn.libsyn.com/p/e/2/d/e2d49676d65218ec/p1541a.mp3?c_id=84308228&cs_id=84308228&expiration=1601254668&hwt=ccab3206052417d0e901722ab00c9c88'},
-    { id: 2, title:'Track 3', artist:'artist 1', image:'images/img_3.jpg', trackUrl:'http://hwcdn.libsyn.com/p/e/2/d/e2d49676d65218ec/p1541a.mp3?c_id=84308228&cs_id=84308228&expiration=1601254668&hwt=ccab3206052417d0e901722ab00c9c88'},
-    { id: 3, title:'Track 4', artist:'artist 1', image:'images/img_4.jpg', trackUrl:'http://hwcdn.libsyn.com/p/e/2/d/e2d49676d65218ec/p1541a.mp3?c_id=84308228&cs_id=84308228&expiration=1601254668&hwt=ccab3206052417d0e901722ab00c9c88'},
-    { id: 4, title:'Track 5', artist:'artist 1', image:'images/img_5.jpg', trackUrl:'http://hwcdn.libsyn.com/p/e/2/d/e2d49676d65218ec/p1541a.mp3?c_id=84308228&cs_id=84308228&expiration=1601254668&hwt=ccab3206052417d0e901722ab00c9c88'},
-  ]
+  // const episodes = [
+  //   { id: 0, title:'Track 1', artist:'artist 1', image:'images/img_1.jpg', trackUrl:'http://hwcdn.libsyn.com/p/e/2/d/e2d49676d65218ec/p1541a.mp3?c_id=84308228&cs_id=84308228&expiration=1601254668&hwt=ccab3206052417d0e901722ab00c9c88'},
+  //   { id: 1, title:'Track 2', artist:'artist 1', image:'images/img_2.jpg', trackUrl:'http://hwcdn.libsyn.com/p/e/2/d/e2d49676d65218ec/p1541a.mp3?c_id=84308228&cs_id=84308228&expiration=1601254668&hwt=ccab3206052417d0e901722ab00c9c88'},
+  //   { id: 2, title:'Track 3', artist:'artist 1', image:'images/img_3.jpg', trackUrl:'http://hwcdn.libsyn.com/p/e/2/d/e2d49676d65218ec/p1541a.mp3?c_id=84308228&cs_id=84308228&expiration=1601254668&hwt=ccab3206052417d0e901722ab00c9c88'},
+  //   { id: 3, title:'Track 4', artist:'artist 1', image:'images/img_4.jpg', trackUrl:'http://hwcdn.libsyn.com/p/e/2/d/e2d49676d65218ec/p1541a.mp3?c_id=84308228&cs_id=84308228&expiration=1601254668&hwt=ccab3206052417d0e901722ab00c9c88'},
+  //   { id: 4, title:'Track 5', artist:'artist 1', image:'images/img_5.jpg', trackUrl:'http://hwcdn.libsyn.com/p/e/2/d/e2d49676d65218ec/p1541a.mp3?c_id=84308228&cs_id=84308228&expiration=1601254668&hwt=ccab3206052417d0e901722ab00c9c88'},
+  // ]
 
   const onInputTyped = (event) => {
     console.log(event.target.value)
@@ -29,27 +26,59 @@ const App = () => {
   }
 
   const onSearchBtnClicked = (event) => {
-    console.log('search button clicked: ' + searchTerm)
-    axios({ 
+    
+    axios ({ 
       url: '/search',
       method: 'post',
-      body: {
-        term: 'searchTerm'
+      data: {
+        term: searchTerm.trim().toLocaleLowerCase()
       },
       options: {
         headers: {Accept: 'application/json'}
       }
     })
-    .then(({data}) => {
-      console.log(data)
+      .then(({ data }) => {
+      setPodcasts(data.podcasts)
+      // console.log('PODCAST: ' + JSON.stringify(data))
     })
     .catch(err => {
-      console.err('Search button axios error')
-    })
-    
-      console.log('PODCAST: ' + JSON.stringify(data))
-  
+
+    }) 
   }
+
+  const selectPodcast = (podcast, event) => {
+    event.preventDefault();
+    console.log('selected podcast: ' + JSON.stringify(podcast))
+    setSelectedPodcast(podcast)
+  }
+
+  useEffect(() => {
+    console.log('SELECTED PODCAST CHANGED: ' + JSON.stringify(selectedPodcast))
+    if (!selectedPodcast)
+      return
+    const url = `/feed?url=${selectedPodcast.feed}`
+    axios({
+      url,
+      method: 'get',
+    })
+      .then(({ data }) => {
+        console.log('FEED: ' + JSON.stringify(data))
+        const { item } = data
+        const tracks = item.map((t, index) => {
+          return {
+            id: index,
+            title: t.title[0],
+            image: selectedPodcast.image,
+            trackUrl: t.enclosure[0]['$'].url
+          }
+        })
+
+        setEpisodes(tracks)
+      })
+      .catch(err => {
+      
+      })
+  }, [selectedPodcast])
 
   return(
     <div className="site-wrap">
@@ -66,7 +95,7 @@ const App = () => {
                   <button onClick={onSearchBtnClicked} className="btn btn-info p-1 ml-2" style={{height: 32}}>GO!</button>
                 </div>
                 <ul className="list-unstyled">
-                  {podcasts.map(podcast => <PodcastRow key={podcast.id} {...podcast}/> )}
+                  {podcasts.map(podcast => <PodcastRow key={podcast.id} {...podcast} onSelect={(e) => selectPodcast(podcast, e)}/> )}
                 </ul>
               </div>
             </div>
