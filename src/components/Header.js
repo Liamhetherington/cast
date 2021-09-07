@@ -1,4 +1,6 @@
 import React from 'react'
+import LoginButton from './LoginButton'
+import LogoutButton from './LogoutButton'
 
 const Header = () => {
   return (
@@ -22,7 +24,8 @@ const Header = () => {
                 </li>
                 <li><a href="about.html">About</a></li>
                 <li><a href="contact.html">Contact</a></li>
-                <li><a href="login-register.html">Login / Register</a></li>
+                {/* <li><LoginButton /></li> */}
+                <li><LogoutButton /></li>
               </ul>
             </nav>
           </div>

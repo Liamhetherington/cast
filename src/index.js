@@ -1,10 +1,16 @@
 import React, {useState, useEffect} from 'react'
 import ReactDOM from 'react-dom'
 import axios from 'axios'
+import { Auth0Provider } from '@auth0/auth0-react'
 
 import Header from './components/Header'
 import PodcastRow from './components/PodcastRow'
 import Episode from './components/Episode'
+import { Login } from "./components/Login/Login"
+import { Register } from "./components/Login/Register"
+
+const domain = process.env.REACT_APP_AUTH0_DOMAIN
+const clientId = process.env.REACT_APP_AUTH0_CLIENT_ID
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -62,7 +68,7 @@ const App = () => {
       method: 'get',
     })
       .then(({ data }) => {
-        console.log('FEED: ' + JSON.stringify(data))
+        console.log('CHANGED PODCAST')
         const { item } = data
         const tracks = item.map((t, index) => {
           return {
@@ -80,8 +86,11 @@ const App = () => {
       })
   }, [selectedPodcast])
 
+
+
   return(
     <div className="site-wrap">
+      {/* <Header /> */}
       <Header />
 
       <div className="site-section">
@@ -110,4 +119,12 @@ const App = () => {
   )
 }
 
-ReactDOM.render(<App />, document.getElementById('root'))
+ReactDOM.render(
+  <Auth0Provider
+    domain="dev-rh3uil8y.us.auth0.com"
+    clientId="tve8q4ZZ00Trej3Gsmep0vWacS7x4b6K"
+    redirectUri={window.location.origin}>
+    <App />
+  </Auth0Provider>,
+  document.getElementById('root')
+)
